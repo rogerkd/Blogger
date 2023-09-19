@@ -1,0 +1,53 @@
+{% extends "blog/master.html" %}
+
+{% block title %}
+<title> Profile </title>
+{% endblock %}
+
+{% block content %}
+
+    <a href = "{% url 'home' %}"> Go Back </a>
+    <br>
+    <br>
+    
+    <img src="{{profile.profile_image.url}}" alt="---------pic---------" width="60" height="80">
+    <h2> {{ profile.user.first_name }}'s Profile </h2> {% if user.id is profile.user_id %} <a href = "{% url 'edit_profile' profile.id %}"> Edit </a> {% endif %}
+    <p style="color:blue"> ##{{ profile.bio }} </p>
+    <p> Following: {{ profile.following.count }}</p>
+    <p> Followers: {{ profile.followers.count }} </p>
+
+    
+    {% if user.id is profile.user_id %}
+        <strong> <i>Following</i> </strong><hr><br>
+            {% for i in profile.following.all %}
+                <a href="{% url 'profile' i.user_id %}"> @{{i}} </a> <a href="{% url 'unfollow_user' i.user_id %}">unfollow</a> <br>
+            {% endfor %}
+        
+        <br>
+        <br>
+
+        <strong> <i>Followers</i> </strong><hr><br>
+            {% for i in profile.followers.all %}
+                <a href="{% url 'profile' i.user_id %}"> @{{i}} </a>  <br>
+            {% endfor %}
+        
+        <br>
+        <br>
+
+        <strong> <i> Other User's </i> </strong><hr><br>
+            {% for i in  other_profile_list %}
+                {% if i not in profile.following.all %}
+                    @{{i}} <a href="{% url 'follow_user' i.user_id %}">follow</a> <br>
+                {% endif %}
+            {% endfor %}
+        <br>
+        <br>
+    
+
+        <strong> <i> Mutuals </i> </strong><hr><br>
+            {% for i in mutuals %}  
+                <a href="{% url 'profile' i.user_id %}"> ${{i}} </a>  <br>   
+            {% endfor %}
+    
+    {% endif %}
+{% endblock %}

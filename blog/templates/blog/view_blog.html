@@ -1,0 +1,30 @@
+{% extends 'blog/master.html' %}
+
+{% block title %}
+{% endblock %}
+
+{% block content %}
+
+    <a href="{% url 'home' %}">Go Back</a>
+    <br>
+ 
+    {% if user.is_authenticated %}
+
+        {% for i in view %}
+
+            <a href="{% url 'remove' i.id %}"> Remove </a>
+            <h2> {{i.title}} </h2>
+            <h4> <i>{{i.description}} </i></h4> 
+            <p> {{i.date}} </p> 
+            <img src="{{i.blog_image.url}}" alt="---------pic---------" width="600" height="300">
+            <hr>
+
+            {% empty %}
+                <h3> No Blog Found </h3>
+
+        {% endfor %}
+
+    {% endif %}
+    
+
+{% endblock %}
