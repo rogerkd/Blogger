@@ -46,8 +46,22 @@
 
         <strong> <i> Mutuals </i> </strong><hr><br>
             {% for i in mutuals %}  
-                <a href="{% url 'profile' i.user_id %}"> ${{i}} </a>  <br>   
+                <a href="{% url 'profile' i.user_id %}"> ${{i}} </a>
+                <button type="button" onclick="personal_chat({{i.user_id}})"> Msg </button>  <br>   
             {% endfor %}
     
     {% endif %}
+{% endblock %}
+
+{% block js %}
+    {{ block.super }}
+    <script>
+
+        // Directing you to private chat
+        function personal_chat(userId) {
+            window.location.pathname = 'chat/private/'+userId+'/';
+        };
+
+    </script>
+
 {% endblock %}

@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'django.contrib.staticfiles',
     'blog',
     'chat',
     'channels',
@@ -137,9 +138,7 @@ STATIC_ROOT = BASE_DIR / 'productionfiles'
 
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS = [
-    BASE_DIR / 'mystaticfiles'
-]
+STATICFILES_DIRS = [BASE_DIR / 'mystaticfiles']
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field

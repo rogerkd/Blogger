@@ -11,7 +11,31 @@
     <input id="room-name-submit" type="button" value="Enter">
     <div id="message-status"></div>
 
+    <br>
+    <br>
+
+    <strong>Chat Room's</strong><br>
+    <hr>
+    {% if room_list %}
+        {% for rooms in room_list %}
+            <p> {{rooms}}
+                <button type="button" onclick="join_room('{{rooms}}')">
+                    Join
+                </button> 
+            </p>
+        {% endfor %}
+    {% else %}
+        No Rooms
+    {% endif %}
+
+{% endblock %}
+
+{% block js %}
+
+    {{ block.super}}
     <script>
+        userName = JSON.parse('{{username|escapejs}}')
+
         document.querySelector('#room-name-input').focus();
         document.querySelector('#room-name-input').onkeyup = function(e) {
             if (e.key === 'Enter') {  // enter, return
@@ -22,23 +46,6 @@
         document.querySelector('#room-name-submit').onclick = function(e) {
             var roomName = document.querySelector('#room-name-input').value;
             var url = "{% url 'save' %}";
-
-            // get csrf_token
-            function getCookie(name) {
-                let cookieValue = null;
-                if (document.cookie && document.cookie !== '') {
-                    const cookies = document.cookie.split(';');
-                    for (let i = 0; i < cookies.length; i++) {
-                        const cookie = cookies[i].trim();
-                        // Does this cookie string begin with the name we want?
-                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                            break;
-                        }
-                    }
-                }
-                return cookieValue;
-            }
             const csrftoken = getCookie('csrftoken');
 
             // ajax request
@@ -53,7 +60,7 @@
             .then(response => response.json())
             .then(data => {
                 if(data.status === 'success'){
-                    window.location.pathname = '/chat/' + roomName + '/';
+                    join_room(roomName);
 
                 } else if(data.status === 'already_taken'){
                     var msg_status = document.getElementById('message-status');
@@ -69,14 +76,40 @@
             });
             
         };
+        
+
+        // Join the room and direct to that room
+        function join_room(room) {
+            var url = '/chat/join_room/' + room + '/';
+            const csrftoken = getCookie('csrftoken');
+
+            // ajax request
+            fetch(url, {
+                method : 'GET',
+                headers : {
+                    'Content-type' : 'application/json',
+                    'X-CSRFToken' : csrftoken,
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'joined'){
+                    notifySocket.send(JSON.stringify({
+                        'moto': 'join',
+                        'notification': userName+' joined The Room!!',
+                        'username': userName,
+                    }));
+                    window.location.pathname = '/chat/' + room + '/';
+                }
+                else if(data.status === 'already_joined'){
+                    window.location.pathname = '/chat/' + room + '/';
+                }
+                else{
+                    console.error('Error joining room');
+                }
+                
+            });
+        };
+
     </script>
-    <br>
-    <br>
-
-    <strong>Chat Room's</strong><br>
-    <hr>
-    {% for rooms in view_room %}
-        <a href = "{% url 'room' rooms %}"> {{rooms}} </a>   <br>
-    {% endfor %}
-
 {% endblock %}

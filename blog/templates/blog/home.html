@@ -9,22 +9,12 @@
     <a href="/admin"> ADMIN </a>
     &nbsp;
     &nbsp;
-    {% for message in messages %}
-            <div class="msg1" role="alert">
-                <strong> </strong> {{message}}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-    {% endfor %}
-    
     {% if user.is_authenticated %}
         <a href="/signout"> SignOut </a>
         &nbsp;
         <a href="{% url 'profile' user.id %}"> Profile </a>
         &nbsp;
-        <a href="{% url 'view_room' %}"> Chat </a>
-        
+        <a href="{% url 'room_list' %}"> Chat </a>
         
         <p> Hey <i>{{user|upper}}</i> </p>
 
@@ -32,9 +22,97 @@
         <br>
         <a href='view_blog/'> MyBlogs </a>
         <hr>
+
+        <div class='feed'>
+            {% for feed in feeds %}
+                <a href="{% url 'profile' feed.author_id %}"> {{feed.author_id}}__@user </a>
+                <h3>{{feed.title}} </h3>
+                <p> <i>{{feed.description}} </i></p> 
+                <p> {{feed.date}} </p> 
+                <img src="{{feed.blog_image.url}}" alt="---------pic---------" width="600" height="300">
+                <p> likes : <span id="like-count-{{feed.author_id}}"> {{feed.i_likes.count}} </span> | 
+                    <button type="button" onclick="liked({{feed.author_id}})" > Like </button> 
+                </p>
+                <hr>
+
+            {% endfor %}
+        </div>
+
     {% else %}
         <a href="/signin"> SignIn </a>
     {% endif %}
-
     
+{% endblock %}
+
+{% block js %}
+    {{ block.super }}
+    <script>
+
+        const userName = JSON.parse('{{ user_name|escapejs }}');
+        
+        // Popup function for notifications
+        function popup(data) {
+            if (data.username.includes(userName)) {
+                const x = document.createElement('div');
+                x.className = 'notify';
+                x.textContent = data.notification;
+
+                document.body.appendChild(x);
+
+                // Disapper popup
+                setTimeout(function() {
+                    x.remove();
+                }, 3000);
+            }
+            
+        }
+        
+        // receive notification
+        notifySocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            if('like/msg'.includes(data.moto)) {
+                popup(data);
+            }
+        };
+
+        // like function
+        function liked(author_id) {
+
+            var url = '/like_blog/'+author_id+'/';
+            const csrftoken = getCookie('csrftoken');
+
+            // ajax request
+            fetch(url, {
+                method : 'GET',
+                headers : {
+                    'Content-type' : 'application/json',
+                    'X-CSRFToken' : csrftoken,
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'success'){
+                    // update like
+                    const likesCount = document.getElementById('like-count-'+ author_id);
+                    if (likesCount) {
+                        likesCount.innerText = data.likes_count;
+                    }
+
+                    notifySocket.send(JSON.stringify({
+                        'moto': 'like',
+                        'notification': data.msg,
+                        'username': data.uname,
+                    }));
+                    
+                }else{
+                    console.error('Error');
+                }
+                
+            });
+            
+        };
+
+
+    </script>
+
 {% endblock %}

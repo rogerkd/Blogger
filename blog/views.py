@@ -1,4 +1,5 @@
-from django.http import HttpResponse
+import json
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from .forms import BlogForm, ProfileForm
 from django.urls import reverse, reverse_lazy
@@ -24,10 +25,17 @@ from django.contrib.auth.decorators import login_required
 
 
 
-def home(request):
-    context = {"name":"Welcome!!"}
+class Home(ListView):
+    model = Blog
+    context_object_name = 'home'
+    template_name = 'blog/home.html'
 
-    return render(request, "blog/home.html", context )
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['feeds'] = context['home'].exclude(author=self.request.user.id)
+        context['user_name'] = json.dumps(str(self.request.user))
+        return context
 
 
 class ViewBlog(LoginRequiredMixin, ListView):
@@ -93,7 +101,33 @@ class EditProfile(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse('profile', kwargs={'pk':self.request.user.id})
 
-        
+
+@login_required
+def like_blog(request, pk):
+    if request.method == 'GET':
+        # logged-in-user
+        current_user_profile = Profile.objects.get(user_id = request.user.id)
+
+        # other-user
+        other_user = User.objects.get(id=pk)
+
+        # other-user-blog
+        other_user_blog = Blog.objects.get(author_id = pk)
+
+        # if already liked the blog
+        if other_user_blog.is_liked_by(current_user_profile):
+            # then undo like
+            other_user_blog.unliked_by(current_user_profile)
+            return JsonResponse({'status': 'success', 'msg': str(request.user)+' likes your blog', 'uname': json.dumps(str(other_user)), 'likes_count': other_user_blog.i_likes.count()})
+
+        # if already not liked the blog
+        else:
+            # then like
+            other_user_blog.liked_by(current_user_profile)
+            return JsonResponse({'status': 'success', 'msg': str(request.user)+' unlikes your blog', 'uname': json.dumps(str(other_user)), 'likes_count': other_user_blog.i_likes.count()})
+    else:
+        return JsonResponse({'status': 'failure'})
+
 
 #---------------------------------------------------------------------------------------
 @login_required

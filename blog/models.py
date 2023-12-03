@@ -25,8 +25,6 @@ class Profile(models.Model):
     def __str__(self):
         return "{}".format(self.user.username)
     
-    
-    
 
     
 class Blog(models.Model):
@@ -35,10 +33,39 @@ class Blog(models.Model):
     description = models.TextField(blank=True, null=True)
     blog_image = models.ImageField(upload_to='blog_images/', blank=True, null=True, verbose_name='Blog Picture')
     date = models.DateTimeField(auto_now_add=True)
-    
+    # comments = models.TextField(blank=True, null=True)
+    i_likes = models.ManyToManyField(
+        Profile,
+        symmetrical=False,
+        related_name='u_likes',
+        blank=True
+    )
+
+    def liked_by(self, user_profile):
+        self.i_likes.add(user_profile)
+        self.save()
+
+    def unliked_by(self, user_profile):
+        self.i_likes.remove(user_profile)
+        self.save()
+
+    def is_liked_by(self, user_profile):
+        flag = self.i_likes.filter(pk=user_profile.pk).exists()
+        return flag
 
     def __str__(self):
         return "{} {} {}".format(self.author, self.title, self.date)
     
     class Meta:
         ordering = ["date"]
+
+
+class Notify(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent', default=None)
+    notification = models.TextField(blank=True, null=True)
+    seen = models.BooleanField(default=False)
+    notify_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["notify_date"]

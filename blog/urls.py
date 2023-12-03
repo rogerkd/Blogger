@@ -2,14 +2,15 @@ from django.urls import path
 from blog import views
 from django.conf import settings
 from django.conf.urls.static import static
-from .views import CreateBlog, ViewBlog, RemoveBlog, CreateProfile, EditProfile
+from .views import Home, CreateBlog, ViewBlog, RemoveBlog, CreateProfile, EditProfile
 
 urlpatterns = [
 
-    path('', views.home, name='home'),
+    path('', Home.as_view(), name='home'),
     path('view_blog/', ViewBlog.as_view(), name='view'),
     path('create_blog/', CreateBlog.as_view(), name='create'),
-    path('remove_blog/<int:pk>', RemoveBlog.as_view(), name='remove'),
+    path('remove_blog/<int:pk>/', RemoveBlog.as_view(), name='remove_blog'),
+    path('like_blog/<int:pk>/', views.like_blog, name='like'),
 
     path('edit_profile/<int:pk>/', EditProfile.as_view(), name = 'edit_profile'),
     path('create_profile/', CreateProfile.as_view(), name='create_profile'),
