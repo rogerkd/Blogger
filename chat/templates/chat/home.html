@@ -1,0 +1,82 @@
+{% extends 'chat/master.html' %}
+
+{% block title %}
+    <title> {{user}} </title>
+{% endblock %}
+
+{% block content %}
+
+    Create your ChatRoom & enter?<br>
+    <input id="room-name-input" type="text" size="100"><br>
+    <input id="room-name-submit" type="button" value="Enter">
+    <div id="message-status"></div>
+
+    <script>
+        document.querySelector('#room-name-input').focus();
+        document.querySelector('#room-name-input').onkeyup = function(e) {
+            if (e.key === 'Enter') {  // enter, return
+                document.querySelector('#room-name-submit').click();
+            }
+        };
+
+        document.querySelector('#room-name-submit').onclick = function(e) {
+            var roomName = document.querySelector('#room-name-input').value;
+            var url = "{% url 'save' %}";
+
+            // get csrf_token
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        // Does this cookie string begin with the name we want?
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            const csrftoken = getCookie('csrftoken');
+
+            // ajax request
+            fetch(url, {
+                method : 'POST',
+                headers : {
+                    'Content-type' : 'application/json',
+                    'X-CSRFToken' : csrftoken,
+                },
+                body : JSON.stringify({'room_name': roomName})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'success'){
+                    window.location.pathname = '/chat/' + roomName + '/';
+
+                } else if(data.status === 'already_taken'){
+                    var msg_status = document.getElementById('message-status');
+                    msg_status.innerText = roomName+' already exists!!!';
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 2000);
+
+                } else{
+                    console.error('Error saving messages');
+                }
+                
+            });
+            
+        };
+    </script>
+    <br>
+    <br>
+
+    <strong>Chat Room's</strong><br>
+    <hr>
+    {% for rooms in view_room %}
+        <a href = "{% url 'room' rooms %}"> {{rooms}} </a>   <br>
+    {% endfor %}
+
+{% endblock %}

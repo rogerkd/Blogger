@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-8*)&+px7*j&%5ociz$6gthw^*hffr%s0wf1y4s^!+db$-vej%q
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['.vercel.app']
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -37,7 +37,6 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
     'blog',
     'chat',
     'channels',
@@ -74,6 +73,10 @@ TEMPLATES = [
 WSGI_APPLICATION = 'Blogger.wsgi.application'
 
 ASGI_APPLICATION = 'Blogger.asgi.application'
+
+SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+
+SESSION_COOKIE_NAME = 'session_user_%s' % os.environ.get('USER', 'default')
 
 CHANNEL_LAYERS = {
     'default': {
@@ -130,7 +133,13 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'productionfiles'
+
+STATIC_URL = '/static/'
+
+STATICFILES_DIRS = [
+    BASE_DIR / 'mystaticfiles'
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field

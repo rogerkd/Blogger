@@ -1,50 +1,130 @@
 {% extends 'chat/master.html' %}
 
 {% block title %}
-    <title> Chat Room </title>
+    <title> {{room_name}} </title>
 {% endblock %}
 
 {% block content %}
+    <div class="room-header">
+        <div class='room-name'> __{{room_name|upper}}__ </h3> </div>
+        <div class='delete-room'> <a href="{% url 'remove' room_name %}"> delete </a> </div>
+    </div>
 
-<textarea id="chat-log" cols="100" rows="20"></textarea><br>
-<input id="chat-message-input" type="text" size="100"><br>
-<input id="chat-message-submit" type="button" value="Send">
-{{ room_name|json_script:"room-name" }}
-<script>
-    const roomName = JSON.parse(document.getElementById('room-name').textContent);
+    <div class="msg-container">
+        {% if view_message %}
+            {% for date in date %}
+                <div  class='date-plate'> {{date}} </div>
+                {% for message in view_message %}
+                    {% if message.timestamp.date|date:"Y-m-d" == date|date:"Y-m-d" %}
+                        {% if message in user_message %}
+                                    <div class="my-msg-plate">
+                                        <i><strong>{{message.user|lower}}</strong></i> - <div class="msg-text"> {{message.content}} </div>  <div class='msg-dt'> {{message.timestamp.time}} </div> <br>
+                                    </div>
+                        {% else %}
+                                    <div class="other-msg-plate">
+                                        <i><strong>{{message.user|lower}}</strong></i> - <div class="msg-text"> {{message.content}} </div>  <div class='msg-dt'> {{message.timestamp.time}} </div> <br>
+                                    </div>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
 
-    const chatSocket = new WebSocket(
-        'ws://'
-        + window.location.host
-        + '/ws/chat/'
-        + roomName
-        + '/'
-    );
+        {% else %}
+            <strong> Lets start the conversation!!! </strong>
+        {% endif %}
+    </div>
 
-    chatSocket.onmessage = function(e) {
-        const data = JSON.parse(e.data);
-        document.querySelector('#chat-log').value += (data.message + '\n');
-    };
+    <br>
+    <br>
 
-    chatSocket.onclose = function(e) {
-        console.error('Chat socket closed unexpectedly');
-    };
+    <input class="msg-input" id="chat-message-input" type="text" size="100">
+    <br>
+    <input class="msg-button" id="chat-message-submit" type="button" value="Send">
 
-    document.querySelector('#chat-message-input').focus();
-    document.querySelector('#chat-message-input').onkeyup = function(e) {
-        if (e.key === 'Enter') {  // enter, return
-            document.querySelector('#chat-message-submit').click();
-        }
-    };
+    {{ room_name|json_script:"room-name" }}
+    <script>
+        const roomName = JSON.parse(document.getElementById('room-name').textContent);
 
-    document.querySelector('#chat-message-submit').onclick = function(e) {
-        const messageInputDom = document.querySelector('#chat-message-input');
-        const message = messageInputDom.value;
-        chatSocket.send(JSON.stringify({
-            'message': message
-        }));
-        messageInputDom.value = '';
-    };
-</script>
+        const chatSocket = new WebSocket(
+            'ws://'
+            + window.location.host
+            + '/ws/chat/'
+            + roomName
+            + '/'
+        );
+
+        // Receive message
+        {% comment %} chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            document.querySelector('#chat-log').value += (data.message + '\n');
+        }; {% endcomment %}
+
+        chatSocket.onclose = function(e) {
+            console.error('Chat socket closed unexpectedly');
+        };
+
+        //Send message
+        document.querySelector('#chat-message-input').focus();
+        document.querySelector('#chat-message-input').onkeyup = function(e) {
+            if (e.key === 'Enter') {  // enter, return
+                document.querySelector('#chat-message-submit').click();
+            }
+        };
+
+        document.querySelector('#chat-message-submit').onclick = function(e) {
+            const messageInputDom = document.querySelector('#chat-message-input');
+            const message = messageInputDom.value;
+
+            if(message != ''){
+            
+                var url = "{% url 'save' %}";
+
+                // get csrf_token
+                function getCookie(name) {
+                    let cookieValue = null;
+                    if (document.cookie && document.cookie !== '') {
+                        const cookies = document.cookie.split(';');
+                        for (let i = 0; i < cookies.length; i++) {
+                            const cookie = cookies[i].trim();
+                            // Does this cookie string begin with the name we want?
+                            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                break;
+                            }
+                        }
+                    }
+                    return cookieValue;
+                }
+                const csrftoken = getCookie('csrftoken');
+                console.log("hello");
+
+                // ajax request
+                fetch(url, {
+                    method : 'POST',
+                    headers : {
+                        'Content-type' : 'application/json',
+                        'X-CSRFToken' : csrftoken,
+                    },
+                    body : JSON.stringify({'room_name': roomName,
+                                            'content': message})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.status === 'success'){
+                        chatSocket.send(JSON.stringify({
+                            'message': message
+                        }));
+                        window.location.reload();
+                    }else{
+                        console.error('Error saving messages');
+                    }
+                    
+                });
+                
+                messageInputDom.value = '';
+
+            }
+        };
+    </script>
 
 {% endblock %}

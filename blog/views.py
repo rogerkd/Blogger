@@ -165,9 +165,7 @@ def unfollow_user(request, pk):
 
 #----------------------------------------------------------------------------------------------------
 def signup(request):
-
     if request.method=="POST":
-
         uname = request.POST['uname']
         fname = request.POST['fname']
         lname = request.POST['lname']
@@ -219,7 +217,6 @@ def signup(request):
 
 
 def signin(request):
-
     if request.method=='POST':
         uname = request.POST['uname']
         pass1 = request.POST['pass1']

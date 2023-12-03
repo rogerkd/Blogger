@@ -1,6 +1,7 @@
 {% extends "blog/master.html" %}
 
 {% block title %}
+    <title> {{user}} </title>
 {% endblock %}
 
 {% block content %}
@@ -21,6 +22,8 @@
         <a href="/signout"> SignOut </a>
         &nbsp;
         <a href="{% url 'profile' user.id %}"> Profile </a>
+        &nbsp;
+        <a href="{% url 'view_room' %}"> Chat </a>
         
         
         <p> Hey <i>{{user|upper}}</i> </p>
