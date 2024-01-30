@@ -33,7 +33,6 @@ class Blog(models.Model):
     description = models.TextField(blank=True, null=True)
     blog_image = models.ImageField(upload_to='blog_images/', blank=True, null=True, verbose_name='Blog Picture')
     date = models.DateTimeField(auto_now_add=True)
-    # comments = models.TextField(blank=True, null=True)
     i_likes = models.ManyToManyField(
         Profile,
         symmetrical=False,
@@ -52,12 +51,21 @@ class Blog(models.Model):
     def is_liked_by(self, user_profile):
         flag = self.i_likes.filter(pk=user_profile.pk).exists()
         return flag
+    
 
     def __str__(self):
         return "{} {} {}".format(self.author, self.title, self.date)
     
     class Meta:
         ordering = ["date"]
+
+
+
+class Comment(models.Model):
+    blog = models.ForeignKey(Blog, on_delete=models.CASCADE)
+    comment = models.TextField(blank=True, null=True)
+    commented_on = models.DateTimeField(auto_now_add=True)
+    
 
 
 class Notify(models.Model):
