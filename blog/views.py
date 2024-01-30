@@ -35,6 +35,7 @@ class Home(ListView):
 
         context['feeds'] = context['home'].exclude(author=self.request.user.id)
         context['user_name'] = json.dumps(str(self.request.user))
+
         return context
 
 

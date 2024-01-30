@@ -1,11 +1,21 @@
 from django.contrib import admin
 # from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User, Group
-from .models import Blog, Profile, Notify
+from .models import Blog, Profile, Comment, Notify
 
 
 admin.site.unregister(Group)
-admin.site.register(Blog)
+
+# combine comment to Blog
+class CommentInline(admin.StackedInline):
+    model = Comment
+
+# extend Blog model
+class BlogAdmin(admin.ModelAdmin):
+    inlines = [CommentInline]
+
+admin.site.register(Blog, BlogAdmin)
+
 
 # combine notify to user
 class NotifyInline(admin.StackedInline):

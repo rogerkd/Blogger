@@ -1,118 +1,151 @@
-{% extends "blog/master.html" %}
-
-{% block title %}
-    <title> {{user}} </title>
-{% endblock %}
-
-{% block content %}
-
-    <a href="/admin"> ADMIN </a>
-    &nbsp;
-    &nbsp;
-    {% if user.is_authenticated %}
-        <a href="/signout"> SignOut </a>
-        &nbsp;
-        <a href="{% url 'profile' user.id %}"> Profile </a>
-        &nbsp;
-        <a href="{% url 'room_list' %}"> Chat </a>
-        
-        <p> Hey <i>{{user|upper}}</i> </p>
-
-        <a href='create_blog/'> CreateBlog </a>
-        <br>
-        <a href='view_blog/'> MyBlogs </a>
-        <hr>
-
-        <div class='feed'>
-            {% for feed in feeds %}
-                <a href="{% url 'profile' feed.author_id %}"> {{feed.author_id}}__@user </a>
-                <h3>{{feed.title}} </h3>
-                <p> <i>{{feed.description}} </i></p> 
-                <p> {{feed.date}} </p> 
-                <img src="{{feed.blog_image.url}}" alt="---------pic---------" width="600" height="300">
-                <p> likes : <span id="like-count-{{feed.author_id}}"> {{feed.i_likes.count}} </span> | 
-                    <button type="button" onclick="liked({{feed.author_id}})" > Like </button> 
-                </p>
-                <hr>
-
-            {% endfor %}
-        </div>
-
-    {% else %}
-        <a href="/signin"> SignIn </a>
-    {% endif %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel='stylesheet'  href="{% static 'chat_style_home.css' %}">
     
-{% endblock %}
+    {% block title %}
+        <title> Blogger App </title>
+    {% endblock %}
+</head>
 
-{% block js %}
-    {{ block.super }}
-    <script>
+<body>
+    {% block content %}
+        {% if user.is_authenticated %}
+            {% comment %} <header>
+                <h1>Welcome, {{ user }}</h1>
+            </header> {% endcomment %}
+            <nav>
+                <a href="/admin"> Admin </a>
+                <a href="/signout"> SignOut </a>
+                <a href="{% url 'profile' user.id %}"> Profile </a>
+                <a href="{% url 'room_list' %}"> Chat </a>
+                <a href='create_blog/'> CreateBlog </a>
+                <a href='view_blog/'> MyBlogs </a>
+            </nav>
+            <br>
+            <main>
+                <div class='feed'>
+                    {% for feed in feeds %}
+                        <div class='post'>
+                            <a href="{% url 'profile' feed.author_id %}">  {{feed.author}} </a>
+                            <h3 style='color:grey'>{{feed.title}} </h3>  <p> {{feed.date}} </p>
+                            <img src="{{feed.blog_image.url}}" alt="Post Image" width="600" height="300">
+                            <p> <i>{{feed.description}} </i></p> 
+                            <div class='post-actions'>
+                                <p> 👍 : <span id="like-count-{{feed.author_id}}"> {{feed.i_likes.count}} </span> | 
+                                    <button class='like-btn' type="button" onclick="liked({{feed.author_id}})" > Like </button> 
+                                </p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </main>
 
-        const userName = JSON.parse('{{ user_name|escapejs }}');
+        {% else %}
+            <a href="/signin"> SignIn </a>
+        {% endif %}
         
-        // Popup function for notifications
-        function popup(data) {
-            if (data.username.includes(userName)) {
-                const x = document.createElement('div');
-                x.className = 'notify';
-                x.textContent = data.notification;
+    {% endblock %}
 
-                document.body.appendChild(x);
+    {% block js %}
 
-                // Disapper popup
-                setTimeout(function() {
-                    x.remove();
-                }, 3000);
-            }
-            
-        }
-        
-        // receive notification
-        notifySocket.onmessage = function(e) {
-            const data = JSON.parse(e.data);
-            if('like/msg'.includes(data.moto)) {
-                popup(data);
-            }
-        };
+        <script>
 
-        // like function
-        function liked(author_id) {
+            // Creating Notification socket
+            notifySocket = new WebSocket(
+                'ws://'
+                + window.location.host
+                + '/ws/notify/'
+            );
 
-            var url = '/like_blog/'+author_id+'/';
-            const csrftoken = getCookie('csrftoken');
-
-            // ajax request
-            fetch(url, {
-                method : 'GET',
-                headers : {
-                    'Content-type' : 'application/json',
-                    'X-CSRFToken' : csrftoken,
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                if(data.status === 'success'){
-                    // update like
-                    const likesCount = document.getElementById('like-count-'+ author_id);
-                    if (likesCount) {
-                        likesCount.innerText = data.likes_count;
+            // get csrf_token
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        // Does this cookie string begin with the name we want?
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
                     }
+                }
+                return cookieValue;
+            }
 
-                    notifySocket.send(JSON.stringify({
-                        'moto': 'like',
-                        'notification': data.msg,
-                        'username': data.uname,
-                    }));
-                    
-                }else{
-                    console.error('Error');
+            const userName = JSON.parse('{{ user_name|escapejs }}');
+            
+            // Popup function for notifications
+            function popup(data) {
+                if (data.username.includes(userName)) {
+                    const x = document.createElement('div');
+                    x.className = 'notify';
+                    x.textContent = data.notification;
+
+                    document.body.appendChild(x);
+
+                    // Disapper popup
+                    setTimeout(function() {
+                        x.remove();
+                    }, 3000);
                 }
                 
-            });
+            }
             
-        };
+            // receive notification
+            notifySocket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                if('like/msg'.includes(data.moto)) {
+                    popup(data);
+                }
+            };
+
+            // like function
+            function liked(author_id) {
+
+                var url = '/like_blog/'+author_id+'/';
+                const csrftoken = getCookie('csrftoken');
+
+                // ajax request
+                fetch(url, {
+                    method : 'GET',
+                    headers : {
+                        'Content-type' : 'application/json',
+                        'X-CSRFToken' : csrftoken,
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.status === 'success'){
+                        // update like
+                        const likesCount = document.getElementById('like-count-'+ author_id);
+                        if (likesCount) {
+                            likesCount.innerText = data.likes_count;
+                        }
+
+                        notifySocket.send(JSON.stringify({
+                            'moto': 'like',
+                            'notification': data.msg,
+                            'username': data.uname,
+                        }));
+                        
+                    }else{
+                        console.error('Error');
+                    }
+                    
+                });
+                
+            };
 
 
-    </script>
+        </script>
 
-{% endblock %}
+    {% endblock %}
+</body>
+</html>
